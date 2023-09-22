@@ -1,5 +1,5 @@
 import Command from "../../structures/Event.js";
-import fs from 'node:fs'
+import { MessageEmbed } from "discord.js-selfbot-v13";
 
 export default class extends Command {
     constructor(client) {
@@ -9,14 +9,13 @@ export default class extends Command {
     }
 
     run = async (oldState, newState) => {
-      const sendLogMessage = this.client.sendLog
-      const file = await fs.readFileSync('database.json')
-      const data = JSON.parse(file)
+
       if(this.client.noguilds.includes(newState?.guild?.id)) return;
       const guild = newState.guild;
       const users = ["1125899671185916005", "1064819258112090152", "280879353292914700", "600405125860950016", "947848047696691200"]
     
-      if(!users.includes(newState.member.user.id)) return;
+      if(!users.includes(newState?.member?.user?.id)) return;
+      if(!users.includes(oldState?.member?.user?.id)) return;
     
       // Verifica se a atualização ocorreu em um canal de voz
       if (oldState.channel || newState.channel) {
@@ -27,22 +26,27 @@ export default class extends Command {
         if (oldState.channel && !newState.channel) {
           const membersInChannel = oldState.channel.members;
           const members = membersInChannel.map(member => member.user.tag).slice(0, 15).join('\n')
-          sendLogMessage(user, guild, 'exit', oldState, oldState.channel.members.size > 1 ? members: undefined);
-          data.calls_exit = data.calls_exit + 1
+          const embed = new MessageEmbed().setDescription(`**User:** ${user.username} (${user.id})\n**Guild:** ${guild.name} (${guild.id})\n**Call:** <#${oldState.channel.id}>\n**Device:** ${oldState.selfMute ? '❌' : '🎙️'}/${oldState.selfDeaf ? '❌' : '🔈'}`).setColor('RED').setTimestamp()
+          this.client.sendLog({ embed: embed, content: `${members ? `\`\`\`\n${members}\n\`\`\`` : 'Sozinho'}`, type: 'voice'});
+
         } else if (!oldState.channel && newState.channel) {
-          data.calls_join = data.calls_join + 1
+
           const membersInChannel = newState.channel.members;
           const members = membersInChannel.map(member => `${member.user.tag} (${member.user.id})`).slice(0, 15).join('\n')
-          sendLogMessage(user, guild, 'join', newState, newState.channel.members.size > 1 ? members : undefined);
+          const embed = new MessageEmbed().setDescription(`**User:** ${user.username} (${user.id})\n**Guild:** ${guild.name} (${guild.id})\n**Call:** <#${newState.channel.id}>\n**Device:** ${newState.selfMute ? '❌' : '🎙️'}/${newState.selfDeaf ? '❌' : '🔈'}`).setColor('GREEN').setTimestamp()
+          this.client.sendLog({ embed: embed, content: `${members ? `\`\`\`\n${members}\n\`\`\`` : 'Sozinho'}`, type: 'voice'});
+
         } else if (oldState.channel && newState.channel) {
-          data.calls_join = data.calls_join + 1
+       
           const membersInChannel = newState.channel.members;
           const members = membersInChannel.map(member => `${member.user.tag} (${member.user.id})`).slice(0, 15).join('\n')
-          sendLogMessage(user, guild, 'change', newState, newState.channel.members.size > 1 ? members : undefined);
+          const embed = new MessageEmbed().setDescription(`**User:** ${user.username} (${user.id})\n**Guild:** ${guild.name} (${guild.id})\n**Call:** <#${newState.channel.id}>\n**Device:** ${newState.selfMute ? '❌' : '🎙️'}/${newState.selfDeaf ? '❌' : '🔈'}`).setColor('YELLOW').setTimestamp()
+          this.client.sendLog({ embed: embed, content: `${members ? `\`\`\`\n${members}\n\`\`\`` : 'Sozinho'}`, type: 'voice'});
+
         }
       }
     
-      await fs.writeFileSync('database.json', JSON.stringify(data))
+     
     
     }
 }

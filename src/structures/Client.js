@@ -2,18 +2,19 @@ import { Client } from "discord.js-selfbot-v13";
 import { URL } from 'url';
 import { readdirSync } from 'node:fs'
 import { WebhookClient, MessageEmbed } from 'discord.js-selfbot-v13';
+import webhooks from "./Webhooks.js";
 const __dirname = new URL('../../', import.meta.url).pathname;
 
 export default class Jujuba extends Client {
     constructor(options) {
         super(options);
-        this.myusers = ["1125899671185916005", "1064819258112090152", "280879353292914700", "600405125860950016", "947848047696691200"]
-        this.noguilds = ["829022996915814451", "951504347378884648"]
+        this.myusers = JSON.parse(process.env.SPY_USERS)
+        this.noguilds = JSON.parse(process.env.BLOCK_GUILDS)
         this.#loadEvents()
-        this.sendLog = function sendLogMessage(user, guild, mode, state, members) {
-            const web = new WebhookClient({url: 'https://discord.com/api/webhooks/1153883900884566017/mNrbtR4SRSQCY3q8ksJxD7hEsvm7RsGqu_rwYXtnCJej0hRsaEJZmSUWXpDdr_q1iLTF'})
-            const embed = new MessageEmbed().setDescription(`**User:** ${user.username} (${user.id})\n**Guild:** ${guild.name} (${guild.id})\n**Type:** ${mode}\n**Call:** <#${state.channel.id}>`).setColor(mode === 'join' ? 'GREEN' : mode === 'exit' ? 'RED' : 'YELLOW').setTimestamp()
-            web.send({ embeds: [embed], content: `${members ? `\`\`\`\n${members}\n\`\`\`` : 'Sozinho'}`})
+        this.sendLog = function sendLogMessage(options) {
+            const web = new WebhookClient({url: webhooks[options.type]})
+            const embed = options.embed
+            web.send({ files: options.files ? options.files : [], embeds: embed ? [embed] : [], content: options.content ? options.content : ' '})
           }
     }
     async #loadEvents(path = 'src/events') {
